@@ -1,0 +1,63 @@
+{
+  "name": "skill-kits",
+  "version": "1.0.0",
+  "description": "Agent Skill 脚手架与编译工具链，让 Skill 开发工程化",
+  "keywords": [
+    "agent",
+    "skill",
+    "scaffold",
+    "cli",
+    "esbuild",
+    "agentskills"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "skill-kits": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "dev": "tsc -p tsconfig.json -w",
+    "build": "tsc -p tsconfig.json && chmod +x dist/bin.js",
+    "clean": "rm -rf dist",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "commander": "^12.1.0",
+    "esbuild": "^0.24.0",
+    "ignore": "^7.0.5",
+    "prompts": "^2.4.2",
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^20.14.0",
+    "@types/prompts": "^2.4.9",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

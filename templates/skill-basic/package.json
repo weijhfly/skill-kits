@@ -1,0 +1,10 @@
+{
+  "name": "{{skillName}}",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "skill-kits build {{skillName}} --cwd ../../..",
+    "dev": "skill-kits dev {{skillName}} --cwd ../../.."
+  }
+}
