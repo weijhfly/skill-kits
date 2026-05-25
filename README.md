@@ -1,17 +1,16 @@
 # skill-kits
 
-> Skill 工程化 —— 用 TypeScript 写 Agent Skill，编译为单文件 ESM，零依赖运行。
-
-**Node.js >= 18** · [agentskills.io 规范](https://agentskills.io/specification) · MIT
+> Skill 工程化 —— 用 TypeScript 写 Agent Skill，编译为单文件 ESM，零依赖运行。  
+> 产物遵循 [agentskills.io 规范](https://agentskills.io/specification)，运行需 Node.js >= 18。
 
 ## Why skill-kits？
 
-| 痛点               | 解法                                                                                                                                     |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| 公共模块无法复用   | `skill-kits/runtime` 内置 HTTP、路由、输出、错误等工具，直接 import；`init` 生成的 monorepo 自带 `packages/shared`，esbuild 自动内联产物 |
-| 没有标准模版       | `pnpm new <name>` 生成对齐规范的 SKILL.md + 工程骨架                                                                                     |
-| TS 开发 vs JS 运行 | `pnpm build` 用 esbuild 打包 TS + 运行时为单个 `main.mjs`，自动 mirror references/assets，并 pack 成 zip                                 |
-| 缺乏质量检测       | `pnpm lint` 校验 SKILL.md 的 name/dir 一致性、行数、引用合法性、description 触发性；`build` 默认先跑 lint                                |
+| 痛点                             | 解法                                                                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 公共模块无法复用                 | `skill-kits/runtime` 内置 HTTP、路由、输出、错误等工具，直接 import；`init` 生成的 monorepo 自带 `packages/shared`，esbuild 自动内联产物 |
+| 没有标准模版                     | `pnpm new <name>` 生成对齐规范的 SKILL.md + 工程骨架                                                                                     |
+| JS 无类型补全，TS 又依赖 tsc/bun | 用 TS 写 Skill 享受类型补全；`pnpm build` 用 esbuild 秒级打包为单文件 `main.mjs`，产物零依赖，Agent 端只需 Node 即可运行                 |
+| 缺乏质量检测                     | `pnpm lint` 校验 SKILL.md 的 name/dir 一致性、行数、引用合法性、description 触发性；`build` 默认先跑 lint                                |
 
 ## 安装
 
@@ -45,14 +44,14 @@ pnpm build daily-report            # 编译（自动 lint + zip）
 ```
       源码                                 产物
 ┌──────────────────┐           ┌──────────────────────────┐
-│  src/main.ts     │           │  dist/                    │
-│  src/commands/   │  build    │  ├── <skill-name>/        │
-│  references/     │ ───────► │  │   ├── SKILL.md         │
-│  assets/         │  esbuild  │  │   ├── scripts/         │
-│  SKILL.md        │           │  │   │   └── main.mjs     │
-└──────────────────┘           │  │   ├── references/      │
-                               │  │   └── assets/          │
-                               │  └── <skill-name>.zip     │
+│  src/main.ts     │           │  dist/                   │
+│  src/commands/   │  build    │  ├── <skill-name>/       │
+│  references/     │ ───────►  │  │   ├── SKILL.md        │
+│  assets/         │  esbuild  │  │   ├── scripts/        │
+│  SKILL.md        │           │  │   │   └── main.mjs    │
+└──────────────────┘           │  │   ├── references/     │
+                               │  │   └── assets/         │
+                               │  └── <skill-name>.zip    │
                                └──────────────────────────┘
   TypeScript + runtime import      单文件 ESM，零依赖
                                    Agent: node scripts/main.mjs
@@ -95,7 +94,15 @@ pnpm build daily-report            # 编译（自动 lint + zip）
 ```ts
 import { createRouter, writeResult } from "skill-kits/runtime";
 
-const router = createRouter({ name: "daily-report", description: "..." });
+const router = createRouter({
+  name: "daily-report",
+  description: "...",
+  commonArgs: {
+    // 每个子命令都自动注入的公共参数
+    domain: { type: "string", required: true, desc: "平台域名" },
+    token: { type: "string", required: true, desc: "SSO token" },
+  },
+});
 
 router.command({
   name: "fetch",
@@ -104,8 +111,11 @@ router.command({
     date: { type: "string", required: true, desc: "YYYY-MM-DD" },
     limit: { type: "number", default: 100, desc: "条数上限" },
     tag: { type: "list", desc: "过滤标签，可重复" },
+    env: { type: "string", choices: ["boe", "online"] as const, desc: "环境" },
+    filter: { type: "json", desc: "复杂过滤条件，JSON 自动解析" },
   },
-  async handler({ date, limit, tag }) {
+  async handler({ date, limit, tag, env, filter, domain, token }) {
+    // env 类型为 "boe" | "online"（choices 推断），filter 已自动 JSON.parse
     writeResult({ ok: true, items: [] });
   },
 });
@@ -113,22 +123,24 @@ router.command({
 router.run(process.argv.slice(2));
 ```
 
-`args` 支持 `string` / `number` / `boolean` / `list` 四种类型，`required` 字段缺失时自动抛 `UserInputError`。
+`args` / `commonArgs` 支持 5 种类型：`string` / `number` / `boolean` / `list` / `json`。`required` 缺失时自动抛 `UserInputError`；`choices` 限定枚举值并提供类型推断；`type: "json"` 自动 `JSON.parse`。
 
 ### 输出
 
 ```ts
-writeResult(payload, pretty?)   // stdout，单行 JSON，供 Agent 消费
-writeError(errorOrMessage, { code?, extra?, setExitCode? })  // stderr + exitCode=1
-notify(message)                 // stderr，进度/阶段提示（ℹ️ 前缀）
-handleCliError(error)           // 顶层 catch 兜底，自动识别 SkillError 子类
+writeResult(payload)                                  // stdout，单行 JSON，供 Agent 消费
+writeError(errorOrMessage, { code?, extra? })         // stderr + exitCode=1
+notify(message)                                       // stderr，进度/阶段提示（ℹ️ 前缀）
+handleCliError(error)                                 // 顶层 catch 兜底，自动识别 SkillError 子类
 ```
 
 ### HTTP
 
-零依赖，基于全局 `fetch`（Node 18+）
+零依赖，基于全局 `fetch`（Node 18+）。不抛错——网络异常 / 非 2xx 都通过 `res.ok` 表达，业务自行决定如何处理：
 
 ```ts
+import { httpGet, httpPost } from "skill-kits/runtime";
+
 const res = await httpGet<UserInfo>("https://api.example.com/me", {
   headers: { authorization: `Bearer ${token}` },
   query: { fields: "id,name" },
@@ -140,26 +152,65 @@ console.log(res.data?.name);
 
 `HttpRequestOptions`：`headers` / `query` / `body` / `signal` / `timeoutMs` / `redirect`。
 
-### 错误
+### 环境变量
+
+读取环境变量工具方法，`requireEnv` 缺失时统一抛 `USER_INPUT_ERROR`（code=`MISSING_ENV`），LLM 可据此引导用户配置：
 
 ```ts
-class SkillError extends Error {
-  code: string;
-  details?: unknown;
-}
-class UserInputError extends SkillError {
-  /* code: USER_INPUT_ERROR */
-}
-class AuthError extends SkillError {
-  /* code: AUTH_ERROR */
-}
-class HttpError extends SkillError {
-  status: number;
-  url: string;
-}
+import { requireEnv, optionalEnv } from "skill-kits/runtime";
+
+const token = requireEnv("INCUT_OPENAPI_TOKEN", {
+  hint: "申请地址：https://incut.bytedance.net/openapi-token",
+});
+// 未设置 → stderr: { "ok": false, "code": "USER_INPUT_ERROR", "error": "缺少环境变量 INCUT_OPENAPI_TOKEN。申请地址：..." }
+
+const pat = optionalEnv("FIGMA_PERSONAL_ACCESS_TOKEN"); // string | null
 ```
 
-业务可继承 `SkillError` 自定义 code（如 `RATE_LIMIT` / `TIMEOUT`）。
+### 轮询心跳
+
+长轮询场景（D2C 生码、SSO 回调等）可以用 `sleepWithHeartbeat` 替代 `setTimeout`，每 5 秒往 stderr 写一次进度，防止 Agent 误判 idle 杀进程：
+
+```ts
+import { sleepWithHeartbeat } from "skill-kits/runtime";
+
+await sleepWithHeartbeat(60_000, {
+  message: (rem) => `等待生码... 剩余 ${rem}s`,
+});
+// stderr 每 5s: ℹ️ 等待生码... 剩余 55s
+// stderr 每 5s: ℹ️ 等待生码... 剩余 50s
+// ...
+```
+
+`SleepWithHeartbeatOptions`：`intervalMs` / `message`（字符串或函数）。
+
+### 错误体系
+
+所有业务错误继承 `SkillError`，`handleCliError` 会自动识别子类并输出结构化 JSON 到 stderr。内置错误码供 LLM 匹配对应处理策略：
+
+| 类                 | code               | 场景                     |
+| ------------------ | ------------------ | ------------------------ |
+| `UserInputError`   | `USER_INPUT_ERROR` | 参数缺失 / 格式错误      |
+| `AuthError`        | `AUTH_ERROR`       | Token 过期 / 权限不足    |
+| `HttpError`        | `HTTP_ERROR`       | 上游 HTTP 非 2xx         |
+| `BusinessApiError` | `BIZ_<code>`       | HTTP 200 但业务 code ≠ 0 |
+
+```ts
+import { SkillError, BusinessApiError } from "skill-kits/runtime";
+
+// 自定义业务错误
+class RateLimitError extends SkillError {
+  constructor(retryAfterSec?: number) {
+    super("RATE_LIMIT", "请求过于频繁", { retryAfterSec });
+  }
+}
+
+// BusinessApiError：自动拼 [code=xxx] 前缀 + hintMap 映射
+throw new BusinessApiError(-10000, "token 过期", {
+  hintMap: { [-10000]: "请重新登录", [-14]: "记录不存在" },
+});
+// stderr → { "ok": false, "code": "BIZ_-10000", "error": "[code=-10000] token 过期（请重新登录）" }
+```
 
 ## 业务公共模块
 

@@ -12,17 +12,9 @@ import { SkillError } from "./errors.js";
 
 export type Jsonish = unknown;
 
-/** 输出结构化结果到 stdout。Agent 通常只解析 stdout 的最后一行 JSON。
- *
- * 泛型 `T` 仅用于在 TS 调用点约束 payload 形状，不影响运行时行为；
- * 不传时与传 `unknown`/`Jsonish` 等价，保持向后兼容。
- */
-export function writeResult<T extends Jsonish = Jsonish>(
-  payload: T,
-  pretty = false,
-): void {
-  const text = JSON.stringify(payload, null, pretty ? 2 : 0);
-  process.stdout.write(`${text}\n`);
+/** 输出结构化结果到 stdout（单行 JSON，供 Agent 消费）。 */
+export function writeResult<T extends Jsonish = Jsonish>(payload: T): void {
+  process.stdout.write(`${JSON.stringify(payload)}\n`);
 }
 
 export interface WriteErrorOptions {
@@ -30,8 +22,6 @@ export interface WriteErrorOptions {
   code?: string;
   /** 任意附加上下文。 */
   extra?: Record<string, unknown>;
-  /** 是否设置 process.exitCode = 1，默认 true。 */
-  setExitCode?: boolean;
 }
 
 /**
@@ -69,7 +59,7 @@ export function writeError(
   if (options.extra) Object.assign(payload, options.extra);
 
   process.stderr.write(`${JSON.stringify(payload, null, 2)}\n`);
-  if (options.setExitCode !== false) process.exitCode = 1;
+  process.exitCode = 1;
 }
 
 /** 进度/阶段提示，写入 stderr。带 ℹ️ 前缀，便于宿主消息渲染识别。 */

@@ -25,6 +25,12 @@ import { runHello } from "./commands/hello.js";
 const router = createRouter({
   name: "{{skillName}}",
   description: "一句话描述本 Skill 做什么",
+  // 如所有命令都需要相同的上下文参数（如 --domain / --token），
+  // 可在此声明 `commonArgs`，会自动注入到每个命令并参与类型推导，对所有命令生效。
+  //   commonArgs: {
+  //     domain: { type: "string", required: true, desc: "API 域名" },
+  //     token: { type: "string", required: true, desc: "鉴权 Token" },
+  //   },
 });
 
 /**

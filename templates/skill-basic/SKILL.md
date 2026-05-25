@@ -11,6 +11,8 @@ metadata:
 
 # {{skillName}}
 
+<!-- 用 1-2 句话概述核心工作流程，例如：通过 Figma 链接生成代码并提交到仓库。 -->
+
 ## 命令清单
 
 ### `hello`
@@ -22,7 +24,7 @@ metadata:
 | `--message` | string | ✅   | 需要回显的文本 |
 
 ```bash
-node {skill_path}/scripts/main.mjs hello --message "你好"
+node scripts/main.mjs hello --message "你好"
 # → {"ok":true,"echo":"你好"}
 ```
 

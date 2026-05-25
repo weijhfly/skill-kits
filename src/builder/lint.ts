@@ -215,7 +215,7 @@ function lintDescription(
       level: "info",
       rule: "description-negative",
       message:
-        "description 建议补充「不要触发」的反例，避免与相邻 Skill 误命中",
+        'description 建议补充「不要触发」的反例，避免与相邻 Skill 误命中（示例："不用于：与 X 无关的查询 / 通用 Y 任务"）',
     });
   }
 }
@@ -249,7 +249,9 @@ async function lintReferences(
       });
       continue;
     }
-    const segments = link.split("/").filter(Boolean);
+    // 计算实际深度时剥离前导 `./`，避免把 `./references/x.md` 误算成两层
+    const normalized = link.replace(/^(\.\/)+/, "");
+    const segments = normalized.split("/").filter(Boolean);
     if (segments.length > 2) {
       items.push({
         level: "warn",

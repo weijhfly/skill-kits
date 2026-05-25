@@ -1,6 +1,6 @@
 {
   "name": "skill-kits",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Agent Skill 脚手架与编译工具链，让 Skill 开发工程化",
   "keywords": [
     "agent",
