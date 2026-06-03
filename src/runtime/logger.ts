@@ -58,7 +58,7 @@ export function writeError(
   if (details !== undefined) payload.details = details;
   if (options.extra) Object.assign(payload, options.extra);
 
-  process.stderr.write(`${JSON.stringify(payload, null, 2)}\n`);
+  process.stderr.write(`${JSON.stringify(payload)}\n`);
   process.exitCode = 1;
 }
 

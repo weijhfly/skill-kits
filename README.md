@@ -159,10 +159,10 @@ console.log(res.data?.name);
 ```ts
 import { requireEnv, optionalEnv } from "skill-kits/runtime";
 
-const token = requireEnv("INCUT_OPENAPI_TOKEN", {
-  hint: "申请地址：https://incut.bytedance.net/openapi-token",
+const token = requireEnv("OPENAPI_TOKEN", {
+  hint: "申请地址：https://example.com/get-token",
 });
-// 未设置 → stderr: { "ok": false, "code": "USER_INPUT_ERROR", "error": "缺少环境变量 INCUT_OPENAPI_TOKEN。申请地址：..." }
+// 未设置 → stderr: { "ok": false, "code": "USER_INPUT_ERROR", "error": "缺少环境变量 OPENAPI_TOKEN。申请地址：..." }
 
 const pat = optionalEnv("FIGMA_PERSONAL_ACCESS_TOKEN"); // string | null
 ```
@@ -196,20 +196,30 @@ await sleepWithHeartbeat(60_000, {
 | `BusinessApiError` | `BIZ_<code>`       | HTTP 200 但业务 code ≠ 0 |
 
 ```ts
-import { SkillError, BusinessApiError } from "skill-kits/runtime";
+import {
+  SkillError,
+  UserInputError,
+  BusinessApiError,
+} from "skill-kits/runtime";
 
-// 自定义业务错误
+// UserInputError：参数校验失败
+throw new UserInputError("activityId 不能为空", { field: "activityId" });
+// stderr → {"ok":false,"code":"USER_INPUT_ERROR","error":"activityId 不能为空","details":{"field":"activityId"}}
+
+// 自定义 BusinessApiError 错误
+throw new BusinessApiError(-10000, "token 过期", {
+  hintMap: { [-10000]: "请重新登录", [-14]: "记录不存在" },
+});
+// stderr → {"ok":false,"code":"BIZ_-10000","error":"[code=-10000] token 过期（请重新登录）"}
+
+// 自定义业务错误：继承 SkillError，code 自由命名
 class RateLimitError extends SkillError {
   constructor(retryAfterSec?: number) {
     super("RATE_LIMIT", "请求过于频繁", { retryAfterSec });
   }
 }
-
-// BusinessApiError：自动拼 [code=xxx] 前缀 + hintMap 映射
-throw new BusinessApiError(-10000, "token 过期", {
-  hintMap: { [-10000]: "请重新登录", [-14]: "记录不存在" },
-});
-// stderr → { "ok": false, "code": "BIZ_-10000", "error": "[code=-10000] token 过期（请重新登录）" }
+throw new RateLimitError(30);
+// stderr → {"ok":false,"code":"RATE_LIMIT","error":"请求过于频繁","details":{"retryAfterSec":30}}
 ```
 
 ## 业务公共模块

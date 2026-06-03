@@ -7,8 +7,8 @@
  * - **附 hint**：抛错时可附「申请地址 / 配置说明」，避免每个 Skill 重写错误信息
  *
  * 使用：
- *   const token = requireEnv("INCUT_OPENAPI_TOKEN", {
- *     hint: "申请地址：https://incut.bytedance.net/openapi-token",
+ *   const token = requireEnv("OPENAPI_TOKEN", {
+ *     hint: "申请地址：https://example.com/get-token",
  *   });
  *
  *   const pat = optionalEnv("FIGMA_PERSONAL_ACCESS_TOKEN");
@@ -21,7 +21,10 @@ export interface RequireEnvOptions {
 }
 
 /** 读取必填环境变量，缺失或空白时抛 `UserInputError`（code=`MISSING_ENV`）。 */
-export function requireEnv(name: string, options: RequireEnvOptions = {}): string {
+export function requireEnv(
+  name: string,
+  options: RequireEnvOptions = {},
+): string {
   const raw = process.env[name];
   const value = raw === undefined ? "" : raw.trim();
   if (!value) {
