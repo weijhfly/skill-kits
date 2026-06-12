@@ -9,6 +9,7 @@ import { runInit } from "./cli/commands/init.js";
 import { runLint } from "./cli/commands/lint.js";
 import { runNew } from "./cli/commands/new.js";
 import { runPack } from "./cli/commands/pack.js";
+import { runTest } from "./cli/commands/test.js";
 import { log } from "./cli/utils.js";
 
 // 运行时 Node 版本检查：与 package.json engines 字段保持一致。
@@ -19,7 +20,7 @@ const nodeMajor = Number.parseInt(
 );
 if (Number.isFinite(nodeMajor) && nodeMajor < 18) {
   process.stderr.write(
-    `skill-kits 需要 Node.js >= 18，当前为 ${process.versions.node}\n`,
+    `skill-kits requires Node.js >= 18, current version is ${process.versions.node}\n`,
   );
   process.exit(1);
 }
@@ -36,14 +37,15 @@ const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 const program = new Command()
   .name(pkg.name)
   .description(
-    "Agent Skill 脚手架与编译工具链（init / new / build / dev / lint / pack）",
+    "Scaffold and build toolchain for Agent Skills (init / new / build / dev / lint / pack)",
   )
   .version(pkg.version);
 
 program
   .command("init [dir]")
-  .description("初始化一个新的 Skill 工作区（缺省为当前目录）")
-  .option("-n, --name <name>", "项目名称（缺省取目标目录名）")
+  .description("Initialize a new Skill workspace (defaults to the current directory)")
+  .option("-n, --name <name>", "Project name (defaults to the target directory name)")
+  .option("--locale <locale>", "UI / template language: en | zh-CN (defaults to env detection)")
   .action(async (dir: string | undefined, opts) => {
     try {
       await runInit(dir ?? ".", opts);
@@ -55,8 +57,9 @@ program
 
 program
   .command("new <name>")
-  .description("在 workspace 中创建新 Skill（输出到 packages/skills/<name>）")
-  .option("--cwd <dir>", "workspace 根目录（默认当前目录）")
+  .description("Create a new Skill in the workspace (output to packages/skills/<name>)")
+  .option("--cwd <dir>", "Workspace root directory (defaults to the current directory)")
+  .option("--locale <locale>", "Template language: en | zh-CN (defaults to the workspace config, then env)")
   .action(async (name: string, opts) => {
     try {
       await runNew(name, opts);
@@ -69,12 +72,12 @@ program
 program
   .command("build [name]")
   .description(
-    "编译 Skill（缺省名称则编译全部），产物为 dist/<name>/{SKILL.md, scripts/main.mjs, references/, assets/}，默认顺手 lint + pack 成 dist/<name>.zip",
+    "Build a Skill (builds all when name is omitted). Output: dist/<name>/{SKILL.md, scripts/main.mjs, references/, assets/}, with lint + pack into dist/<name>.zip by default",
   )
-  .option("--minify", "压缩产物 JS")
-  .option("--no-lint", "构建前不自动跑 lint")
-  .option("--no-pack", "构建后不自动打包成 zip")
-  .option("--cwd <dir>", "workspace 根目录（默认当前目录）")
+  .option("--minify", "Minify the output JS")
+  .option("--no-lint", "Skip lint before building")
+  .option("--no-pack", "Skip packing into a zip after building")
+  .option("--cwd <dir>", "Workspace root directory (defaults to the current directory)")
   .action(async (name: string | undefined, opts) => {
     try {
       await runBuild(name, opts);
@@ -87,18 +90,18 @@ program
 program
   .command("dev <name>")
   .description(
-    "监听源码变化，自动重新编译（默认 sourcemap=inline，方便定位错误堆栈）",
+    "Watch source changes and rebuild automatically (sourcemap=inline by default for easier stack traces)",
   )
   .option(
     "--out <dir>",
-    "自定义产物根目录，重编后产物会落到 <dir>/<name>/。常用于直接吐到 agent skills 目录，便于联调",
+    "Custom output root; rebuilt artifacts go to <dir>/<name>/. Handy for syncing directly to an agent skills directory",
   )
-  .option("--no-sourcemap", "关闭 sourcemap")
+  .option("--no-sourcemap", "Disable sourcemap")
   .option(
     "--run [args]",
-    "重编成功后自动 `node <bundle> <args>` 跑一次，用于本地快速回归",
+    "Run `node <bundle> <args>` once after a successful rebuild, for quick local regression",
   )
-  .option("--cwd <dir>", "workspace 根目录（默认当前目录）")
+  .option("--cwd <dir>", "Workspace root directory (defaults to the current directory)")
   .action(async (name: string, opts) => {
     try {
       // commander 把无值的 --run 解析为 true，需要规范成空字符串。
@@ -117,9 +120,9 @@ program
 
 program
   .command("lint [name]")
-  .description("校验 SKILL.md（name/dir 一致、行数、引用、description 触发性）")
-  .option("--strict", "把 warn 视作 error")
-  .option("--cwd <dir>", "workspace 根目录（默认当前目录）")
+  .description("Lint SKILL.md (name/dir match, line count, references, description triggers)")
+  .option("--strict", "Treat warnings as errors")
+  .option("--cwd <dir>", "Workspace root directory (defaults to the current directory)")
   .action(async (name: string | undefined, opts) => {
     try {
       await runLint(name, opts);
@@ -131,11 +134,27 @@ program
 
 program
   .command("pack <name>")
-  .description("把 dist/<name>/ 打包成 dist/<name>.zip（要求先执行 build）")
-  .option("--cwd <dir>", "workspace 根目录（默认当前目录）")
+  .description("Pack dist/<name>/ into dist/<name>.zip (requires running build first)")
+  .option("--cwd <dir>", "Workspace root directory (defaults to the current directory)")
   .action(async (name: string, opts) => {
     try {
       await runPack(name, opts);
+    } catch (err) {
+      log.error((err as Error).message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("test [name]")
+  .description(
+    "Run Skill unit tests (tests all when name is omitted). Convention: packages/skills/<name>/src/**/*.test.ts, based on node:test + tsx",
+  )
+  .option("--watch", "Watch files and rerun automatically")
+  .option("--cwd <dir>", "Workspace root directory (defaults to the current directory)")
+  .action(async (name: string | undefined, opts) => {
+    try {
+      await runTest(name, opts);
     } catch (err) {
       log.error((err as Error).message);
       process.exit(1);

@@ -8,11 +8,13 @@
     "new": "skill-kits new",
     "build": "skill-kits build",
     "dev": "skill-kits dev",
-    "lint": "skill-kits lint"
+    "lint": "skill-kits lint",
+    "test": "skill-kits test"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "skill-kits": "^1.0.0",
+    "tsx": "^4.0.0",
     "typescript": "^5.6.0"
   },
   "engines": {

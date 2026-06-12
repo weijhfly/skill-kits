@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "skill-kits build {{skillName}} --cwd ../../..",
-    "dev": "skill-kits dev {{skillName}} --cwd ../../.."
+    "dev": "skill-kits dev {{skillName}} --cwd ../../..",
+    "test": "skill-kits test {{skillName}} --cwd ../../.."
   }
 }

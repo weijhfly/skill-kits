@@ -4,6 +4,7 @@ import { join, relative, resolve } from "node:path";
 import { buildSkill } from "../../builder/index.js";
 import { lintSkill } from "../../builder/lint.js";
 import { packSkill } from "../../builder/pack.js";
+import { applyWorkspaceLocale, t } from "../i18n.js";
 import { formatBytes, log } from "../utils.js";
 
 export interface BuildCmdOptions {
@@ -27,17 +28,16 @@ export async function runBuild(
   options: BuildCmdOptions = {},
 ): Promise<void> {
   const cwd = resolve(options.cwd ?? process.cwd());
+  applyWorkspaceLocale(cwd);
   const targets = name ? [name] : await listSkills(cwd);
   if (targets.length === 0) {
-    throw new Error(
-      "当前 workspace 下没有可构建的 Skill。先执行 `npx skill-kits new <name>`。",
-    );
+    throw new Error(t("build.noSkills"));
   }
 
   for (const target of targets) {
     const skillDir = join(cwd, "packages", "skills", target);
     if (!existsSync(skillDir)) {
-      log.error(`Skill 不存在: ${target}（已查找 ${skillDir}）`);
+      log.error(t("skill.notFound", { name: target, dir: skillDir }));
       process.exitCode = 1;
       continue;
     }
@@ -55,28 +55,26 @@ export async function runBuild(
         log.warn(`  [lint:${item.rule}] ${item.message}`);
       }
       if (errors.length > 0) {
-        log.error(
-          `${target} lint 失败：${errors.length} 个错误（可加 --no-lint 跳过校验）`,
-        );
+        log.error(t("build.lintFailed", { name: target, count: errors.length }));
         process.exitCode = 1;
         continue;
       }
     }
 
-    log.info(`正在构建 ${log.bold(target)} ...`);
+    log.info(t("build.start", { name: log.bold(target) }));
     const start = Date.now();
     const result = await buildSkill({
       skillDir,
       minify: options.minify,
     });
     const elapsed = ((Date.now() - start) / 1000).toFixed(2);
-    log.success(`${target} 构建完成（${elapsed}s）`);
-    log.dim(`  Skill 包目录 : ${relative(cwd, result.skillOutDir) || "."}`);
+    log.success(t("build.done", { name: target, elapsed }));
+    log.dim(`  ${t("build.fieldSkillDir")}: ${relative(cwd, result.skillOutDir) || "."}`);
     log.dim(
-      `  入口 JS     : ${relative(cwd, result.bundleFile)}（${formatBytes(result.bundleBytes)}）`,
+      `  ${t("build.fieldBundle")}: ${relative(cwd, result.bundleFile)} (${formatBytes(result.bundleBytes)})`,
     );
-    log.dim(`  SKILL.md    : ${relative(cwd, result.skillMdFile)}`);
-    log.dim(`  help 命令    : node ${relative(cwd, result.bundleFile)} --help`);
+    log.dim(`  ${t("build.fieldSkillMd")}: ${relative(cwd, result.skillMdFile)}`);
+    log.dim(`  ${t("build.fieldHelp")}: node ${relative(cwd, result.bundleFile)} --help`);
 
     // 默认顺手 pack 成 zip，省一道命令；可通过 `--no-pack` 关掉。
     if (options.pack !== false) {
@@ -85,7 +83,7 @@ export async function runBuild(
         rootName: result.name,
       });
       log.dim(
-        `  zip 产物    : ${relative(cwd, packResult.outFile)}（${formatBytes(packResult.bytes)}, ${packResult.entries} entries）`,
+        `  ${t("build.fieldZip")}: ${relative(cwd, packResult.outFile)} (${formatBytes(packResult.bytes)}, ${packResult.entries} entries)`,
       );
     }
   }

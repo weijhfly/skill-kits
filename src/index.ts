@@ -13,5 +13,6 @@ export { runDev } from "./cli/commands/dev.js";
 export { runInit } from "./cli/commands/init.js";
 export { runLint } from "./cli/commands/lint.js";
 export { runNew } from "./cli/commands/new.js";
+export { runTest } from "./cli/commands/test.js";
 export { isValidSkillName, validateSkillMeta } from "./core/index.js";
 export type { SkillMeta } from "./core/index.js";

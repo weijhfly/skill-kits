@@ -1,10 +1,10 @@
 # @skills/shared
 
-跨 Skill 复用的业务公共模块。runtime 之外、属于你业务领域的工具/常量/客户端，都放这里。
+Shared business modules reused across Skills. Beyond runtime, put your domain-specific utilities/constants/clients here.
 
-## 用法
+## Usage
 
-1. 在目标 Skill 的 `package.json` 中加依赖：
+1. Add the dependency in the target Skill's `package.json`:
 
    ```json
    {
@@ -14,11 +14,11 @@
    }
    ```
 
-2. 执行 `pnpm install`。
-3. 在源码中导入：
+2. Run `pnpm install`.
+3. Import in source:
 
    ```ts
    import { greet } from "@skills/shared";
    ```
 
-构建时 esbuild 会把 `@skills/shared` 的代码内联进 `dist/<skill-name>/scripts/main.mjs`，产物依旧零依赖单文件。
+At build time, esbuild inlines `@skills/shared` into `dist/<skill-name>/scripts/main.mjs`, keeping the output a zero-dependency single file.

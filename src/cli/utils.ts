@@ -1,7 +1,38 @@
-import { dirname, resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export { isValidSkillName } from "../core/index.js";
+
+/** Supported UI locales. Kept intentionally small for a lightweight scaffold. */
+export type Locale = "en" | "zh-CN";
+
+/**
+ * Resolve the active locale.
+ * Priority: explicit value (e.g. `--locale`) > `SKILL_KITS_LOCALE` > `LC_ALL` > `LANG`.
+ * Anything starting with `zh` maps to `zh-CN`; everything else falls back to `en`.
+ */
+export function resolveLocale(explicit?: string): Locale {
+  const raw =
+    explicit ??
+    process.env.SKILL_KITS_LOCALE ??
+    process.env.LC_ALL ??
+    process.env.LANG ??
+    "";
+  return raw.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
+}
+
+/** 读取 workspace 根 `.skillkitrc.json` 里记录的 locale（init 时写入）。 */
+export function readWorkspaceLocale(cwd: string): string | undefined {
+  const file = join(cwd, ".skillkitrc.json");
+  if (!existsSync(file)) return undefined;
+  try {
+    const parsed = JSON.parse(readFileSync(file, "utf8"));
+    return typeof parsed?.locale === "string" ? parsed.locale : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * 定位脚手架附带的 `templates/` 目录：

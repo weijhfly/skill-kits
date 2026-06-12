@@ -1,7 +1,7 @@
 {
   "name": "skill-kits",
-  "version": "1.0.5",
-  "description": "Agent Skill 脚手架与编译工具链，让 Skill 开发工程化",
+  "version": "1.1.0",
+  "description": "Engineering toolchain for authoring Agent Skills in TypeScript — compile to a single zero-dependency ESM file",
   "keywords": [
     "agent",
     "skill",
@@ -35,6 +35,10 @@
     "./runtime": {
       "types": "./dist/runtime/index.d.ts",
       "import": "./dist/runtime/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
     },
     "./package.json": "./package.json"
   },

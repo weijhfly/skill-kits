@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import { lintSkill, type LintReport } from '../../builder/lint.js'
+import { applyWorkspaceLocale, t } from '../i18n.js'
 import { log } from '../utils.js'
 
 export interface LintCmdOptions {
@@ -22,9 +23,10 @@ export async function runLint(
   options: LintCmdOptions = {},
 ): Promise<void> {
   const cwd = resolve(options.cwd ?? process.cwd())
+  applyWorkspaceLocale(cwd)
   const targets = name ? [name] : await listSkills(cwd)
   if (targets.length === 0) {
-    throw new Error('当前 workspace 下没有可校验的 Skill。')
+    throw new Error(t('lint.noSkills'))
   }
 
   let totalErr = 0
@@ -34,11 +36,11 @@ export async function runLint(
   for (const target of targets) {
     const skillDir = join(cwd, 'packages', 'skills', target)
     if (!existsSync(skillDir)) {
-      log.error(`Skill 不存在: ${target}`)
+      log.error(t('skill.notFoundShort', { name: target }))
       totalErr += 1
       continue
     }
-    log.info(`正在校验 ${log.bold(target)}`)
+    log.info(t('lint.checking', { name: log.bold(target) }))
     const report = await lintSkill(skillDir)
     reports.push(report)
 
@@ -55,20 +57,24 @@ export async function runLint(
       }
     }
     log.dim(
-      `  统计：body ${report.stats.bodyLines} 行 / ${report.stats.bodyChars} 字符；description ${report.stats.descriptionChars} 字符`,
+      t('lint.stats', {
+        lines: report.stats.bodyLines,
+        chars: report.stats.bodyChars,
+        descChars: report.stats.descriptionChars,
+      }),
     )
   }
 
-  log.dim(`workspace: ${relative(process.cwd(), cwd) || '.'}`)
+  log.dim(t('lint.workspace', { path: relative(process.cwd(), cwd) || '.' }))
   if (totalErr > 0) {
-    log.error(`校验失败：${totalErr} 个错误，${totalWarn} 个警告`)
+    log.error(t('lint.failed', { errors: totalErr, warns: totalWarn }))
     process.exitCode = 1
     return
   }
   if (options.strict && totalWarn > 0) {
-    log.error(`严格模式失败：${totalWarn} 个警告`)
+    log.error(t('lint.strictFailed', { warns: totalWarn }))
     process.exitCode = 1
     return
   }
-  log.success(`校验通过（${totalWarn} 个警告）`)
+  log.success(t('lint.passed', { warns: totalWarn }))
 }

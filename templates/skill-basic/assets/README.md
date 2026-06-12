@@ -1,3 +1,3 @@
 # Assets
 
-> 模板、图片、Schema、固定数据等放在本目录，由脚本读取或作为产出物。
+> Put templates, images, schemas, fixed data, etc. here, to be read by scripts or produced as output.

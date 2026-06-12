@@ -2,6 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { watchSkill } from "../../builder/index.js";
+import { applyWorkspaceLocale, t } from "../i18n.js";
 import { formatBytes, log } from "../utils.js";
 
 export interface DevOptions {
@@ -40,9 +41,10 @@ export async function runDev(
   options: DevOptions = {},
 ): Promise<void> {
   const cwd = resolve(options.cwd ?? process.cwd());
+  applyWorkspaceLocale(cwd);
   const skillDir = join(cwd, "packages", "skills", name);
   if (!existsSync(skillDir)) {
-    throw new Error(`Skill 不存在: ${name}（已查找 ${skillDir}）`);
+    throw new Error(t("skill.notFound", { name, dir: skillDir }));
   }
 
   const outDir = options.out ? resolve(cwd, options.out) : undefined;
@@ -50,12 +52,12 @@ export async function runDev(
     options.sourcemap === false ? false : "inline";
   const shouldRun = typeof options.run === "string";
 
-  log.info(`正在监听 ${log.bold(name)} 的源码变化 ...`);
+  log.info(t("dev.watching", { name: log.bold(name) }));
   if (outDir) {
-    log.dim(`  产物输出至：${relative(cwd, join(outDir, name)) || "."}`);
+    log.dim(t("dev.outDir", { path: relative(cwd, join(outDir, name)) || "." }));
   }
   if (shouldRun) {
-    log.dim(`  重编后自动运行：node <bundle> ${options.run}`);
+    log.dim(t("dev.autoRun", { args: options.run }));
   }
 
   let child: ChildProcess | undefined;
@@ -87,19 +89,20 @@ export async function runDev(
     { skillDir, outDir, sourcemap },
     (result, error) => {
       if (error) {
-        log.error(`重编失败: ${error.message}`);
+        log.error(t("dev.rebuildFailed", { message: error.message }));
         return;
       }
       if (!result) return;
       if (result.kind === "bundle") {
         log.success(
-          `已重编：${relative(cwd, result.bundleFile)}（${formatBytes(result.bundleBytes)}）`,
+          t("dev.rebuilt", {
+            path: relative(cwd, result.bundleFile),
+            size: formatBytes(result.bundleBytes),
+          }),
         );
       } else {
         // 仅 SKILL.md / references / assets 同步，未触发 esbuild 重编。
-        log.success(
-          `已同步：${relative(cwd, result.skillOutDir)}（SKILL.md / references / assets）`,
-        );
+        log.success(t("dev.synced", { path: relative(cwd, result.skillOutDir) }));
       }
       if (!shouldRun) return;
       // 仅在真正重编 JS 后才重启子进程；纯资源同步不重启，避免无意义打断。
@@ -115,9 +118,9 @@ export async function runDev(
         });
         child.on("exit", (code, signal) => {
           if (code !== null && code !== 0) {
-            log.dim(`  (子进程退出 code=${code})`);
+            log.dim(t("dev.childExit", { code }));
           } else if (signal) {
-            log.dim(`  (子进程被信号终止: ${signal})`);
+            log.dim(t("dev.childSignal", { signal }));
           }
         });
       });
@@ -127,7 +130,7 @@ export async function runDev(
   process.on("SIGINT", async () => {
     await killChild();
     await dispose();
-    log.info("已退出。");
+    log.info(t("dev.exited"));
     process.exit(0);
   });
 }

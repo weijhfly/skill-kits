@@ -1,6 +1,7 @@
 import { existsSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { packSkill } from "../../builder/pack.js";
+import { applyWorkspaceLocale, t } from "../i18n.js";
 import { formatBytes, log } from "../utils.js";
 
 export interface PackCmdOptions {
@@ -18,9 +19,10 @@ export async function runPack(
   options: PackCmdOptions = {},
 ): Promise<void> {
   const cwd = resolve(options.cwd ?? process.cwd());
+  applyWorkspaceLocale(cwd);
   const skillDir = join(cwd, "packages", "skills", name);
   if (!existsSync(skillDir)) {
-    throw new Error(`Skill 不存在: ${name}（已查找 ${skillDir}）`);
+    throw new Error(t("skill.notFound", { name, dir: skillDir }));
   }
 
   // 新鲜度检查：源 SKILL.md mtime > dist SKILL.md mtime → 提示重 build
@@ -31,13 +33,22 @@ export async function runPack(
     const distMtime = statSync(distMd).mtimeMs;
     if (srcMtime > distMtime + 1_000) {
       log.warn(
-        `dist 产物比源 SKILL.md 旧（${new Date(distMtime).toISOString()} < ${new Date(srcMtime).toISOString()}），建议先 \`skill-kits build ${name}\``,
+        t("pack.stale", {
+          name,
+          distTime: new Date(distMtime).toISOString(),
+          srcTime: new Date(srcMtime).toISOString(),
+        }),
       );
     }
   }
 
   const result = await packSkill({ skillDir });
   log.success(
-    `${name} 已打包：${relative(cwd, result.outFile)}（${formatBytes(result.bytes)}, ${result.entries} entries）`,
+    t("pack.done", {
+      name,
+      path: relative(cwd, result.outFile),
+      size: formatBytes(result.bytes),
+      entries: result.entries,
+    }),
   );
 }

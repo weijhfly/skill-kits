@@ -1,9 +1,9 @@
 ---
-name: { { skillName } }
+name: {{skillName}}
 description: >
-  用 1 句话概述核心能力（动词开头，例如：通过 X 平台 OpenAPI 完成 Y 任务）。
-  当用户提到「关键词 A / 关键词 B」或要求「执行 Y 操作」时调用。
-  不用于：与 X 无关的场景 / 非 Y 领域的任务（可列举 1-2 个容易误命中的反例）。
+  Summarize the core capability in one sentence (start with a verb, e.g. "Complete task Y via platform X's OpenAPI").
+  Invoke it when the user mentions "keyword A / keyword B" or asks to "perform action Y".
+  Not for: scenarios unrelated to X / tasks outside the Y domain (list 1-2 easily-confused counterexamples).
 metadata:
   author: your-name
   version: "1.0.0"
@@ -11,36 +11,36 @@ metadata:
 
 # {{skillName}}
 
-<!-- 用 1-2 句话概述核心工作流程，例如：通过 Figma 链接生成代码并提交到仓库。 -->
+<!-- Summarize the core workflow in 1-2 sentences, e.g. "Generate code from a Figma link and commit it to the repo." -->
 
-## 命令清单
+## Commands
 
 ### `hello`
 
-回显输入内容。
+Echo the input.
 
-| 参数        | 类型   | 必填 | 说明           |
-| ----------- | ------ | ---- | -------------- |
-| `--message` | string | ✅   | 需要回显的文本 |
+| Argument    | Type   | Required | Description        |
+| ----------- | ------ | -------- | ------------------ |
+| `--message` | string | ✅       | Text to echo back  |
 
 ```bash
-node scripts/main.mjs hello --message "你好"
-# → {"ok":true,"echo":"你好"}
+node scripts/main.mjs hello --message "hi"
+# → {"ok":true,"echo":"hi"}
 ```
 
-> 参数详情见 [references/api.md](references/api.md)（如有）。
+> Argument details in [references/api.md](references/api.md) (if any).
 
-## 失败处理
+## Failure handling
 
-| 场景         | 处理                                   |
-| ------------ | -------------------------------------- |
-| 参数缺失     | 补全必填参数后重试                     |
-| 鉴权失败     | 重新获取 Token                         |
-| 上游接口异常 | 根据错误码判断是否临时故障，必要时重试 |
+| Scenario             | Action                                            |
+| -------------------- | ------------------------------------------------- |
+| Missing argument     | Provide the required argument and retry           |
+| Auth failure         | Re-fetch the token                                |
+| Upstream API error   | Check the error code; retry if it's transient     |
 
-> 完整错误码见 [references/errors.md](references/errors.md)（如有）。
+> Full error codes in [references/errors.md](references/errors.md) (if any).
 
-## 注意事项
+## Notes
 
-- 运行环境：Node.js >= 18
-- 所有命令支持 `--help` 查看参数说明
+- Runtime: Node.js >= 18
+- All commands support `--help` to view argument descriptions

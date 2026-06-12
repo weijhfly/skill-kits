@@ -1,47 +1,47 @@
 #!/usr/bin/env node
 /**
- * {{skillName}} Skill 入口。
- * 使用 `createRouter` 自动处理 --help / 必填参数 / 错误归一化。
+ * {{skillName}} Skill entry.
+ * Uses `createRouter` to handle --help / required args / error normalization.
  */
 import { createRouter } from "skill-kits/runtime";
 import { runHello } from "./commands/hello.js";
 
 /**
- * `name` / `description` 会出现在 `--help` 顶部，用于告诉调用方（LLM）
- * 这个 Skill 是干什么的。示例：
+ * `name` / `description` appear at the top of `--help`, telling the caller (LLM)
+ * what this Skill does. Example:
  *
  *   $ node scripts/main.mjs --help
- *   {{skillName}} — 一句话描述本 Skill 做什么
+ *   {{skillName}} — one-line description of what this Skill does
  *
- *   用法：
+ *   Usage:
  *     node scripts/main.mjs <command> [options]
  *
- *   命令：
- *     hello            示例命令，回显输入
+ *   Commands:
+ *     hello            example command, echoes input
  *
- *   公共参数：
- *     --help, -h        查看帮助
+ *   Common options:
+ *     --help, -h        show help
  */
 const router = createRouter({
   name: "{{skillName}}",
-  description: "一句话描述本 Skill 做什么",
-  // 如所有命令都需要相同的上下文参数（如 --domain / --token），
-  // 可在此声明 `commonArgs`，会自动注入到每个命令并参与类型推导，对所有命令生效。
+  description: "one-line description of what this Skill does",
+  // If every command needs the same context args (e.g. --domain / --token),
+  // declare `commonArgs` here; they are injected into every command and typed.
   //   commonArgs: {
-  //     domain: { type: "string", required: true, desc: "API 域名" },
-  //     token: { type: "string", required: true, desc: "鉴权 Token" },
+  //     domain: { type: "string", required: true, desc: "API domain" },
+  //     token: { type: "string", required: true, desc: "auth token" },
   //   },
 });
 
 /**
- * 每个子命令的 `description` 会展示在顶层 `--help` 的命令列表里；
- * `args[*].desc` 则展示在 `<command> --help` 子命令帮助里。
+ * Each subcommand's `description` shows in the top-level `--help` command list;
+ * `args[*].desc` shows in the `<command> --help` subcommand help.
  */
 router.command({
   name: "hello",
-  description: "示例命令，回显输入",
+  description: "example command, echoes input",
   args: {
-    message: { type: "string", required: true, desc: "需要回显的文本" },
+    message: { type: "string", required: true, desc: "text to echo back" },
   },
   handler({ message }) {
     runHello(message);
