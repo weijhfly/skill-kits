@@ -60,6 +60,6 @@ function defaultOnBeat(
       notify(message(remaining));
       return;
     }
-    notify(message ?? `等待中... 剩余 ${remaining}s`);
+    notify(message ?? `Waiting... ${remaining}s remaining`);
   };
 }

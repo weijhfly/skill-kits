@@ -26,18 +26,14 @@ if (Number.isFinite(nodeMajor) && nodeMajor < 18) {
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-// 根据当前文件位置 (src/bin.ts 或 dist/bin.js) 向上寻找 package.json
-const pkgPath = join(
-  __dirname,
-  __dirname.endsWith("dist") ? ".." : "..",
-  "package.json",
-);
+// src/bin.ts 与 dist/bin.js 都位于包根下一级，统一向上一级取 package.json
+const pkgPath = join(__dirname, "..", "package.json");
 const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 
 const program = new Command()
   .name(pkg.name)
   .description(
-    "Scaffold and build toolchain for Agent Skills (init / new / build / dev / lint / pack)",
+    "Scaffold and build Agent Skills in TypeScript (init / new / build / dev / lint / pack)",
   )
   .version(pkg.version);
 

@@ -1,6 +1,6 @@
 # skill-kits
 
-> **English** | [中文](./README.zh-CN.md)
+> **English** | [中文](https://github.com/weijhfly/skill-kits/blob/main/README.zh-CN.md)
 
 > Skill engineering — author Agent Skills in TypeScript, compile to a single-file ESM, run with zero dependencies.  
 > Output follows the [agentskills.io specification](https://agentskills.io/specification) and requires Node.js >= 18.
@@ -326,7 +326,7 @@ Place a `.skillkitrc.json` at the workspace root to customize lint behavior:
 
 ```json
 {
-  // "locale": "zh-CN",  // see the Language section below
+  // "locale": "zh-CN",  // see the Language section above
   "lint": {
     "triggerHints": ["何时", "trigger", "use when"],
     "negativeHints": ["不要", "do not"],

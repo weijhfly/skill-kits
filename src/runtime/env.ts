@@ -20,7 +20,7 @@ export interface RequireEnvOptions {
   hint?: string;
 }
 
-/** 读取必填环境变量，缺失或空白时抛 `UserInputError`（code=`MISSING_ENV`）。 */
+/** 读取必填环境变量，缺失或空白时抛 `UserInputError`（code=`USER_INPUT_ERROR`）。 */
 export function requireEnv(
   name: string,
   options: RequireEnvOptions = {},
@@ -28,8 +28,8 @@ export function requireEnv(
   const raw = process.env[name];
   const value = raw === undefined ? "" : raw.trim();
   if (!value) {
-    const hint = options.hint ? `。${options.hint}` : "";
-    throw new UserInputError(`缺少环境变量 ${name}${hint}`, {
+    const hint = options.hint ? `. ${options.hint}` : "";
+    throw new UserInputError(`Missing environment variable ${name}${hint}`, {
       env: name,
     });
   }

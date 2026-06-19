@@ -1,6 +1,6 @@
 # skill-kits
 
-> [English](./README.md) | **中文**
+> [English](https://github.com/weijhfly/skill-kits/blob/main/README.md) | **中文**
 
 > Skill 工程化 —— 用 TypeScript 写 Agent Skill，编译为单文件 ESM，零依赖运行。  
 > 产物遵循 [agentskills.io 规范](https://agentskills.io/specification)，运行需 Node.js >= 18。
@@ -326,7 +326,7 @@ skill-kits 以英文为基准；CLI 输出和生成的模板会跟随解析出�
 
 ```json
 {
-  // "locale": "zh-CN",  // 见下方"语言"章节
+  // "locale": "zh-CN",  // 见上方"语言"章节
   "lint": {
     "triggerHints": ["何时", "trigger", "use when"],
     "negativeHints": ["不要", "do not"],

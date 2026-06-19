@@ -116,7 +116,7 @@ export function createRouter<C extends ArgsSchema = ArgsSchema>(
       const target = commands.find((c) => c.name === cmd);
       if (!target) {
         process.stderr.write(
-          `未知命令: ${cmd}\n\n${formatHelp(optsForHelp, commands)}\n`,
+          `Unknown command: ${cmd}\n\n${formatHelp(optsForHelp, commands)}\n`,
         );
         process.exitCode = 1;
         return;
@@ -160,7 +160,7 @@ function resolveArgs(
     const raw = opts[key];
     if (raw === undefined) {
       if (def.required) {
-        throw new UserInputError(`缺少必填参数: --${key}`);
+        throw new UserInputError(`Missing required argument: --${key}`);
       }
       out[key] = def.default ?? defaultFor(def.type);
       continue;
@@ -195,10 +195,10 @@ function coerce(
       let value: string;
       if (typeof raw === "string") value = raw;
       else if (Array.isArray(raw)) value = raw[raw.length - 1] ?? "";
-      else throw new UserInputError(`参数 --${key} 必须是字符串`);
+      else throw new UserInputError(`Argument --${key} must be a string`);
       if (def.choices && !def.choices.includes(value)) {
         throw new UserInputError(
-          `参数 --${key} 非法，可选值：${def.choices.join("/")}，收到 "${value}"`,
+          `Invalid value for --${key}; expected one of: ${def.choices.join("/")}, received "${value}"`,
         );
       }
       return value;
@@ -206,13 +206,13 @@ function coerce(
     case "number": {
       if (Array.isArray(raw)) {
         throw new UserInputError(
-          `参数 --${key} 不支持多次传入，请只指定一个数字`,
+          `Argument --${key} cannot be passed multiple times; provide a single number`,
         );
       }
       const n = Number(raw);
       if (!Number.isFinite(n)) {
         throw new UserInputError(
-          `参数 --${key} 必须是数字，收到: ${String(raw)}`,
+          `Argument --${key} must be a number, received: ${String(raw)}`,
         );
       }
       return n;
@@ -222,7 +222,7 @@ function coerce(
       if (raw === "true" || raw === "1") return true;
       if (raw === "false" || raw === "0") return false;
       throw new UserInputError(
-        `参数 --${key} 必须是布尔（true/false/1/0），收到: ${String(raw)}`,
+        `Argument --${key} must be a boolean (true/false/1/0), received: ${String(raw)}`,
       );
     case "list":
       if (Array.isArray(raw)) return raw;
@@ -231,14 +231,14 @@ function coerce(
     case "json": {
       if (typeof raw !== "string") {
         throw new UserInputError(
-          `参数 --${key} 必须是 JSON 字符串，收到: ${String(raw)}`,
+          `Argument --${key} must be a JSON string, received: ${String(raw)}`,
         );
       }
       try {
         return JSON.parse(raw);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
-        throw new UserInputError(`参数 --${key} 不是合法 JSON：${msg}`);
+        throw new UserInputError(`Argument --${key} is not valid JSON: ${msg}`);
       }
     }
   }
@@ -251,23 +251,23 @@ function formatHelp(
   const lines: string[] = [];
   lines.push(`${opts.name} — ${opts.description ?? ""}`.trim());
   lines.push("");
-  lines.push("用法：");
+  lines.push("Usage:");
   lines.push(`  node scripts/main.mjs <command> [options]`);
   lines.push("");
-  lines.push("命令：");
+  lines.push("Commands:");
   for (const c of commands) {
     lines.push(`  ${c.name.padEnd(16)} ${c.description}`);
   }
   lines.push("");
-  lines.push("公共参数：");
+  lines.push("Common options:");
   for (const [k, def] of Object.entries(opts.commonArgs ?? {})) {
     lines.push(`  ${formatArgRow(k, def)}`);
   }
-  lines.push("  --help, -h        查看帮助");
+  lines.push("  --help, -h        Show help");
   if (commands.length > 0) {
     lines.push("");
     lines.push(
-      `提示：使用 \`node scripts/main.mjs <command> --help\` 查看具体子命令的参数。`,
+      `Tip: run \`node scripts/main.mjs <command> --help\` to see a specific command's options.`,
     );
   }
   return lines.join("\n");
@@ -281,13 +281,13 @@ function formatCommandHelp(
   const lines: string[] = [];
   lines.push(`${_opts.name} ${cmd.name} — ${cmd.description}`);
   lines.push("");
-  lines.push("用法：");
+  lines.push("Usage:");
   lines.push(`  node scripts/main.mjs ${cmd.name} [options]`);
   lines.push("");
-  lines.push("参数：");
+  lines.push("Options:");
   const merged = mergeSchema(commonArgs, cmd.args);
   if (Object.keys(merged).length === 0) {
-    lines.push("  （无）");
+    lines.push("  (none)");
   } else {
     for (const [k, def] of Object.entries(merged)) {
       lines.push(`  ${formatArgRow(k, def)}`);
@@ -298,7 +298,7 @@ function formatCommandHelp(
 
 function formatArgRow(name: string, def: ArgSpec): string {
   const flag = `--${name}`;
-  const tag = def.required ? "必填" : "可选";
-  const choices = def.choices ? `（${def.choices.join("/")}）` : "";
+  const tag = def.required ? "required" : "optional";
+  const choices = def.choices ? ` (${def.choices.join("/")})` : "";
   return `${flag.padEnd(16)} <${def.type}> [${tag}] ${def.desc ?? ""}${choices}`;
 }
